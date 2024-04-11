@@ -1,7 +1,28 @@
 
-**conventional-semver** is a [Conventional Commits](https://www.conventionalcommits.org/) processor written in C++, designed to emit [Semantic Versioning]() details as part of a build pipeline. It runs independent from larger frameworks/toolchains, allowing it to be used without requiring additional dependencies to be layered onto a build environment.
+**conventional-semver** is a [Conventional Commits](https://www.conventionalcommits.org/) processor written in C++, designed to emit a [SEMVER](https://semver.org) as part of a build pipeline. It runs independent from larger frameworks/toolchains allowing it to be used without requiring additional dependencies to be layered onto a build environment.
 
 ## Usage
+
+```text
+Usage:
+        conventional-semver [options] [repo-path]
+
+Options:
+        --help              print usage, then exit.
+        --version           print version info, then exit.
+        --verbose           enable verbose (debug) output.
+        --commit <hash>     indicates which commit hash to start changelog from.
+        --tag <name>        indicates which tag to start changelog from.
+        --changelog <file>  overrides the name of the file the changelog is written to, otherwise 'changelog.md' is the default.
+        --no-semver         disable SEMVER output to STDOUT.
+        --major             SEMVER 'Major' component will start with this value, default is '0'.
+        --minor             SEMVER 'Minor' component will start with this value, default is '0'.
+        --patch             SEMVER 'Patch' component will start with this value, default is '0'.
+        --git-path <path>   overrides the path to `git` tool, otherwise `git` must be in environment PATH.
+
+Parameters:
+        repo-path           the path of the git repository to process, if not specified defaults to working directory.
+```
 
 ### Generating SEMVER
 
@@ -14,7 +35,7 @@ Example:
 0.1.23
 ```
 
-This allows you to pull a semver into an Environment Variable, evaluate it as an argument, or pipe it to a file/stream for additional processing:
+This allows you to pull a semver into an Environment Variable, evaluate it as an Argument to another tool, or pipe it to a file/stream for additional processing:
 
 ```bash
 % export SEMVER=$(conventional-semver)
@@ -22,17 +43,56 @@ This allows you to pull a semver into an Environment Variable, evaluate it as an
 0.1.23
 ```
 
+#### Override Baseline SEMVER
+
+Projects adopting Conventional Commits may need to customize the baseline SEMVER, rather than starting from `0.0.0`. This can be done with the `--major`, `--minor`, and `--patch` arguments.
+
+When run on a repo containing three non-conventional commits:
+
+```bash
+% conventional-semver --major 1 --minor 2 --patch 3
+1.2.6
+```
+
 #### SEMVER Configuration
 
-To keep SEMVER Configuration simple there are three conifguration files:
+When run without any command-line arguments a default set of settings are used which implement a standard Conventional Commits behavior.
 
-- **major-types.conf** - contains a listing of all Conventional Commit `<type>` strings which should result in a MAJOR increment.
-- **minor-types.conf** - contains a listing of all Conventional Commit `<type>` strings which should result in a MINOR increment.
-- **patch-types.conf** - contains a listing of all Conventional Commit `<type>` strings which should result in a PATCH increment.
+To customize behavior a configuration file may be created. This file can be passed in using a `--config` argument, or, placed into one of the following well-known locations (and in the following order):
 
-Unrecognized `<type>` values result in no change to SEMVER result.
+* `./conventional-semver.conf` (working directory.)
+* `~/.config/conventional-semver/settings.conf` (user profile `.config` directory.)
+* `/etc/conventional-semver/settings.conf` (root `/etc` directory.)
 
-Each of these contains a default population which you can customize to meet your own needs needs.
+The confdiguration file should have the following format:
+
+```ini
+# lines starting with hash (#) are comments
+# empty lines, like the following, are ignored
+
+# conventional commit "type" mappings are
+# configured in a [types] section. the following
+# mirrors the default configuration:
+[types]
+.*!=major
+feat.*=minor
+.*=patch
+
+# conventional commit "footer" mappings are
+# configured in a [footers] section. the following
+# mirrors the default configuration:
+[footers]
+BREAKING[\-\.]CHANGE=major
+
+# in each of the above sections, each line
+# represents a key-value pair. the key is a regex
+# and the value is a component type to be
+# incremented if the regex is a match.
+```
+
+There is a sample configuration file located in this repo as `config/conventional-semver.conf` which contains additional comments and explanations, you can customize it to fit your needs and then place it at one of the well-known locations mentioned above.
+
+## Not yet Implemented
 
 ### Generating CHANGELOG
 
@@ -91,20 +151,3 @@ There are no special expando variables supported in the footer.
 ##### CHANGELOG Template Caveats
 
 No escaping is performed on any of the emitted values. Thus, it is possible for commit messages to interact with parsers/renderers in unintended ways. For example if you make a template to emit an HTML changelog, and a commit message contains content which looks like an 'element', it will most likely result in a changelog that doesn't render as expected.
-
-### Configuration File Handling
-
-**conventional-semver** will hierarchically scan for Configuration Files in the following order, if a file is not found scanning will progress in-order through these locaitons, if a file is found scanning will stop.
-
-1. The current working directory that **conventional-semver** is run from.
-2. A `.conventional-semver` in the current working directory.
-3. The parent directory of the current working directory.
-4. A `.conventional-semver` in the parent directory.
-5. A traversal through all parent directories according to steps (3) and (4), up to and including the volume root.
-
-To disable directory traversal you can specify the `--no-traversal` switch.
-
-You can also specify the `--config-dir <path>` switch, providing the required `<path>` argument. The value provided for `<path>` will be checked for configuration files. When this switch is specified no directory traversal will be performed.
-
-If a required configuration file cannot be found an error will be emitted and the tool will terminate with a non-zero exit code.
-
