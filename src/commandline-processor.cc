@@ -12,8 +12,10 @@
 #include "commandline-processor.hh"
 
 #ifndef SEMVER
-#define SEMVER "0.0.1"
+#define SEMVER 0.0.1
 #endif
+#define ppstr(x) ppxstr(x)
+#define ppxstr(x) #x
 
 namespace csemver
 {
@@ -26,7 +28,7 @@ namespace csemver
     void CommandlineProcessor::PrintInfo()
     {
         std::cout << 
-            "conventional-semver v" << SEMVER << std::endl << 
+            "conventional-semver v" << ppstr(SEMVER) << std::endl << 
             "Copyright (C) sw4k, MIT Licensed" << std::endl;
     }
 
