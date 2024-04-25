@@ -52,18 +52,20 @@ namespace csemver
 
     std::iostream::int_type GitLogStreamBuf::underflow()
     {
-        _logger->Trace("underflow");
         if (gptr() == pptr())
         {
+            _logger->Trace("underflow-g-eq-p");
             return EOF;
         }
         else if (gptr() < pptr())
         {
+            _logger->Trace("underflow-g-lt-p");
             setg(gptr(), gptr(), pptr());
             return *gptr();
         }
         else
         {
+            _logger->Trace("underflow-g-gt-p");
             setg(pbase(), pbase(), pptr());
             return *gptr();
         }
@@ -88,6 +90,7 @@ namespace csemver
         _logger->Trace("readentry");
         if (NULL == _nextEntry.get())
         {
+            _logger->Trace("readentry->reset");
             _nextEntry.reset(new std::vector<char>());
         }
         do
@@ -98,12 +101,14 @@ namespace csemver
                 : underflow();
             if (EOF == ch)
             {
+                _logger->Trace("readentry->EOF");
                 return std::string();
             }
             else if ('\xef' == ch)
             {
+                _logger->Trace("readentry->term");
+                (*gptr()) = '\0';
                 gbump(1);
-                //_nextEntry->push_back(ch);
                 _nextEntry->push_back('\0');
                 std::string line = std::string(_nextEntry->data());
                 _nextEntry.reset();
@@ -111,6 +116,7 @@ namespace csemver
             }
             else
             {
+                (*gptr()) = '\0';
                 gbump(1);
                 if (ch != '\n' || _nextEntry->size() != 0)
                 {
