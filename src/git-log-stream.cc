@@ -116,7 +116,6 @@ namespace csemver
             if ('\xef' == ch)
             {
                 _logger->Trace("readentry->term");
-                (*gptr()) = '\0';
                 gbump(1);
                 _nextEntry->push_back('\0');
                 std::string line = std::string(_nextEntry->data());
@@ -125,7 +124,6 @@ namespace csemver
             }
             else
             {
-                (*gptr()) = '\0';
                 gbump(1);
                 if (ch != '\n' || _nextEntry->size() != 0)
                 {
