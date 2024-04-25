@@ -95,16 +95,25 @@ namespace csemver
         }
         do
         {
-            //auto ch = sgetc();
-	        char ch = (gptr() < egptr())
-                ? *gptr()
-                : underflow();
-            if (EOF == ch)
+            char ch;
+            if (gptr() < egptr())
             {
-                _logger->Trace("readentry->EOF");
-                return std::string();
+                ch = *gptr();
             }
-            else if ('\xef' == ch)
+            else
+            {
+	            std::iostream::int_type uf = underflow();
+                if (EOF == uf)
+                {
+                    _logger->Trace("readentry->EOF");
+                    return std::string();
+                }
+                else
+                {
+                    ch = (char)uf;                    
+                }
+            }
+            if ('\xef' == ch)
             {
                 _logger->Trace("readentry->term");
                 (*gptr()) = '\0';
