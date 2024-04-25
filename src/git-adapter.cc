@@ -158,8 +158,13 @@ namespace csemver
             close(stdout_pipe[1]);
             close(stderr_pipe[1]);
 
+            int wait_result = waitpid(gitPid, NULL, 0);
+            if (-1 == wait_result)
+            {
+                auto eno = errno;
+                _logger->Error("waitpid error: " + eno);
+            }
             ConsumeGitOutput(stdout_pipe[0], stderr_pipe[0]);
-            waitpid(gitPid, NULL, 0);
 
             // close remaining pipe fds
             close(stdin_pipe[1]);
